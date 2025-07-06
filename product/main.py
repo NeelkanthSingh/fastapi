@@ -1,11 +1,15 @@
 from fastapi import FastAPI, Depends, status, Response, HTTPException
 from sqlalchemy.orm import Session
-from .schemas import Product, DisplayProduct
+from .schemas import Product, DisplayProduct, Seller, DisplaySeller
 from typing import List
 from .import models
+from passlib.context import CryptContext
 from .database import engine, SessionLocal
 
 app = FastAPI()
+
+# This is a password hashing manager from the passlib library
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated = "auto") # where bcrypt is industry standard hashing algorithm, deprecated = "auto" automatically handles deprecated hashing schemes.
 
 def get_db():
     db = SessionLocal()
@@ -16,11 +20,21 @@ def get_db():
 
 models.Base.metadata.create_all(engine)
 
+@app.post('/seller', response_model=DisplaySeller)
+def add_seller(request: Seller, db: Session = Depends(get_db)):
+    hashed_password = pwd_context.hash(request.password)
+    new_seller = models.Seller(name = request.name, email = request.email, password = hashed_password)
+    db.add(new_seller)
+    db.commit()
+    db.refresh(new_seller)
+
+    return new_seller
+
 # Injection DB session using Depends and cleanup is done after the call finishes, yield ensures of that
 # status_code can be added this way
 @app.post('/product', status_code=status.HTTP_201_CREATED)
 def add(product: Product, db: Session = Depends(get_db)):
-    new_product = models.Product(name = product.name, description = product.description, price = product.price)
+    new_product = models.Product(name = product.name, description = product.description, price = product.price, seller_id = 1)
     db.add(new_product)
     db.commit()
     db.refresh(new_product) # Updates the Python object with database-generated values. For example, if your table has an auto-incrementing ID, this fills in the ID
