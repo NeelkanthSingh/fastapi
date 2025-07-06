@@ -1,0 +1,1 @@
+This contains all the basic tutorials on how to use FastAPI to create REST APIs.
