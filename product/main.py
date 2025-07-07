@@ -6,7 +6,22 @@ from .import models
 from passlib.context import CryptContext
 from .database import engine, SessionLocal
 
-app = FastAPI()
+app = FastAPI(
+    title="Products API",
+    description="Get details for all the products on output",
+    terms_of_service="https://www.google.com",
+    contact={
+        "Developer_name": "Neelkanth Singh",
+        "Website": "https://www.google.com",
+        "email": "neelkanthsingh.jr@gmail.com"
+    },
+    license_info={
+        "name": "XYZ",
+        "url": "https://www.google.com"
+    },
+    docs_url="/documentation",
+    redoc_url=None
+)
 
 # This is a password hashing manager from the passlib library
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated = "auto") # where bcrypt is industry standard hashing algorithm, deprecated = "auto" automatically handles deprecated hashing schemes.
@@ -20,7 +35,7 @@ def get_db():
 
 models.Base.metadata.create_all(engine)
 
-@app.post('/seller', response_model=DisplaySeller)
+@app.post('/seller', response_model=DisplaySeller, tags=["Seller"])
 def add_seller(request: Seller, db: Session = Depends(get_db)):
     hashed_password = pwd_context.hash(request.password)
     new_seller = models.Seller(name = request.name, email = request.email, password = hashed_password)
@@ -32,7 +47,7 @@ def add_seller(request: Seller, db: Session = Depends(get_db)):
 
 # Injection DB session using Depends and cleanup is done after the call finishes, yield ensures of that
 # status_code can be added this way
-@app.post('/product', status_code=status.HTTP_201_CREATED)
+@app.post('/product', status_code=status.HTTP_201_CREATED, tags=["Product"])
 def add(product: Product, db: Session = Depends(get_db)):
     new_product = models.Product(name = product.name, description = product.description, price = product.price, seller_id = 1)
     db.add(new_product)
@@ -41,7 +56,7 @@ def add(product: Product, db: Session = Depends(get_db)):
     return product
 
 
-@app.get('/products/{id}', response_model=DisplayProduct)
+@app.get('/products/{id}', response_model=DisplayProduct, tags=["Product"])
 def get_product(id, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == id).first()
     if not product:
@@ -49,12 +64,12 @@ def get_product(id, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
-@app.get('/products', response_model=List[DisplayProduct])
+@app.get('/products', response_model=List[DisplayProduct], tags=["Product"])
 def get_products(response: Response, db: Session = Depends(get_db)):
     products = db.query(models.Product).all()
     return products
 
-@app.put('/products/{id}')
+@app.put('/products/{id}', tags=["Product"])
 def update(id, request: Product, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == id)
     if product.first():
@@ -64,7 +79,7 @@ def update(id, request: Product, db: Session = Depends(get_db)):
     else:
         return {'message': "Product not found!!"}
 
-@app.delete('/product/{id}')
+@app.delete('/product/{id}', tags=["Product"])
 def delete(id, db: Session = Depends(get_db)):
     # Does not synchronize all the ojects in the current session to reflect the deletion.
     db.query(models.Product).filter(models.Product.id == id).delete(synchronize_session=False) 

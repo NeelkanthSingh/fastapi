@@ -8,8 +8,8 @@ class Product(Base):
     name = Column(String)
     description = Column(String)
     price = Column(Integer)
-    seller_id = Column(Integer, ForeignKey('sellers.id'))
-    seller = relationship("Seller", back_populates='products')
+    seller_id = Column(Integer, ForeignKey('sellers.id')) # Creates foreigh key relationship, thus a one-to-many relationship.
+    seller = relationship("Seller", back_populates='products') # This relationship allows to reach seller from the product row and vice-versa because same is defined down below.
 
 class Seller(Base):
     __tablename__ = 'sellers'
