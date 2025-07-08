@@ -5,11 +5,14 @@ from ..schemas import Product, DisplayProduct
 from .. import models
 from typing import List
 
-router = APIRouter()
+router = APIRouter(
+    tags=["Product"],
+    prefix="/product"
+)
 
 # Injection DB session using Depends and cleanup is done after the call finishes, yield ensures of that
 # status_code can be added this way
-@router.post('/product', status_code=status.HTTP_201_CREATED, tags=["Product"])
+@router.post('/', status_code=status.HTTP_201_CREATED)
 def add(product: Product, db: Session = Depends(get_db)):
     new_product = models.Product(name = product.name, description = product.description, price = product.price, seller_id = 1)
     db.add(new_product)
@@ -18,7 +21,7 @@ def add(product: Product, db: Session = Depends(get_db)):
     return product
 
 
-@router.get('/products/{id}', response_model=DisplayProduct, tags=["Product"])
+@router.get('/{id}', response_model=DisplayProduct)
 def get_product(id, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == id).first()
     if not product:
@@ -26,12 +29,12 @@ def get_product(id, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
-@router.get('/products', response_model=List[DisplayProduct], tags=["Product"])
+@router.get('/', response_model=List[DisplayProduct])
 def get_products(response: Response, db: Session = Depends(get_db)):
     products = db.query(models.Product).all()
     return products
 
-@router.put('/products/{id}', tags=["Product"])
+@router.put('/{id}')
 def update(id, request: Product, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == id)
     if product.first():
@@ -41,7 +44,7 @@ def update(id, request: Product, db: Session = Depends(get_db)):
     else:
         return {'message': "Product not found!!"}
 
-@router.delete('/product/{id}', tags=["Product"])
+@router.delete('/{id}')
 def delete(id, db: Session = Depends(get_db)):
     # Does not synchronize all the ojects in the current session to reflect the deletion.
     db.query(models.Product).filter(models.Product.id == id).delete(synchronize_session=False) 
