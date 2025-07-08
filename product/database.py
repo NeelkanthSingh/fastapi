@@ -15,3 +15,9 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 # declarative_base is a base class for all models, it provides functionalities that map models to the database tables and ORM functionalities
 Base = declarative_base()
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db # yield creates a generator that can be paused and resumed
+    finally:
+        db.close()
